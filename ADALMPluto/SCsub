@@ -4,7 +4,8 @@ Import('env')
 
 sources = [
     "register_types.cpp",
-    "adalm_pluto.cpp"
+    "adalm_pluto.cpp",
+    "fftw_d.cpp"
 ]
 
 # First, create a custom env for the shared library.
@@ -12,10 +13,9 @@ module_env = env.Clone()
 
 # Position-independent code is required for a shared library.
 module_env.Append(CCFLAGS=['-fPIC'])
-#module_env.Append(CFLAGS=['-liio'])
 
 # Don't inject Godot's dependencies into our shared library.
-module_env['LIBS'] = ['iio']
+module_env['LIBS'] = ['iio', 'fftw3',  'm']
 
 # Define the shared library. By default, it would be built in the module's
 # folder, however it's better to output it into `bin` next to the

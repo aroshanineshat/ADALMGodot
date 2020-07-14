@@ -53,6 +53,7 @@ void ADALMPluto::setup(){
  
 	rxbuf = iio_device_create_buffer(dev, this->buffer_size, false);
 
+
 }
 
 Array ADALMPluto::receive(){
@@ -71,6 +72,7 @@ Array ADALMPluto::receive(){
 			const int16_t q = ((int16_t*)p_dat)[1]; // Imag (Q)
 
 			data.push_back( i );
+            data.push_back( q );
  
 		}		
     return data;
