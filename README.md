@@ -4,7 +4,7 @@
 
 Godot game engine provides a suitable and easy interface for visualization and Software Defined Radio (SDR) is an application where visalization can be crucial. 
 
-This module adds the functionality of connecting to ADALM Pluto SDR through GDScript. The code is in its super early stages and more functionality will be added to it later. 
+This module adds the functionality of connecting to ADALM Pluto SDR through GDScript. It uses Libiio to connect to a ADALMPluto device. FFTW3 is also supported. 
 
 # Dependencies
 
