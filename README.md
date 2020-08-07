@@ -1,4 +1,7 @@
 [![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/tterb/atomic-design-ui/blob/master/LICENSEs)
+[![TODOs](https://badgen.net/https/api.tickgit.com/badgen/github.com/aroshanineshat/ADALMGodot)](https://www.tickgit.com/browse?repo=github.com/aroshanineshat/ADALMGodot)
+
+
 
 # ADALMGodot
 
