@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 
+//TODO: Stream data flawlessly
 
 class ADALMPluto : public Reference {
     GDCLASS (ADALMPluto, Reference);
