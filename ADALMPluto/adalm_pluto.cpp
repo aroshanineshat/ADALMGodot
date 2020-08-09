@@ -8,6 +8,7 @@ void ADALMPluto::_bind_methods(){
     ClassDB::bind_method(D_METHOD("set_Freq", "value"), &ADALMPluto::set_Freq);
     ClassDB::bind_method(D_METHOD("setup"), &ADALMPluto::setup);
     ClassDB::bind_method(D_METHOD("receive"), &ADALMPluto::receive);
+    ClassDB::bind_method(D_METHOD("get_available_iio_devices"), &ADALMPluto::get_available_iio_devices);
 }
 
 void ADALMPluto::set_buffer_size(int value){
@@ -25,6 +26,36 @@ void ADALMPluto::set_Freq(long int value){
     this->log ("Frequency set ...");
 }
 
+Array  ADALMPluto::get_available_iio_devices(){
+    // numberOfDevices will contain the number of available iio devices
+    int numberOfDevices;
+    /*
+    *   NULL context searches for all available backends,
+    *   flag is set to 0 based on the documentation.
+    */
+    this->scan_ctx = iio_create_scan_context(NULL,0);
+    if (!scan_ctx)
+		return Array();
+
+
+    // Running the scan
+    numberOfDevices = iio_scan_context_get_info_list(scan_ctx, &info); 
+    if (numberOfDevices < 0) { // If there is no available device
+        return Array();
+    }
+
+    for (int i=0; i< numberOfDevices; i++){
+        String item;
+        item = iio_context_info_get_description (info[i]) ; 
+        item = item + " URI: " ;
+        item = item + iio_context_info_get_uri(info[i]);
+        list_of_available_devices.append(item);
+    }
+
+    return list_of_available_devices;
+
+}
+
 void ADALMPluto::setup(){
     std::wstring ws = this->ip_address.c_str();
     std::string s( ws.begin(), ws.end() );
@@ -36,7 +67,7 @@ void ADALMPluto::setup(){
     iio_channel_attr_write_longlong(
 		iio_device_find_channel(this->phy, "altvoltage0", true),
 		"frequency",
-		this->Freq); /* RX LO frequency 1.09GHz */
+		this->Freq);
     
     iio_channel_attr_write_longlong(
 		iio_device_find_channel(phy, "voltage0", false),
