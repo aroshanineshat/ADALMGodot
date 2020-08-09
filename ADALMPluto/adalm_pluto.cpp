@@ -9,6 +9,8 @@ void ADALMPluto::_bind_methods(){
     ClassDB::bind_method(D_METHOD("setup"), &ADALMPluto::setup);
     ClassDB::bind_method(D_METHOD("receive"), &ADALMPluto::receive);
     ClassDB::bind_method(D_METHOD("get_available_iio_devices"), &ADALMPluto::get_available_iio_devices);
+    ClassDB::bind_method(D_METHOD("get_URI_by_Index","index"), &ADALMPluto::get_URI_byIndex);
+    ClassDB::bind_method(D_METHOD("scan_available_iio_devices","index"), &ADALMPluto::scan_for_available_devices);
 }
 
 void ADALMPluto::set_buffer_size(int value){
@@ -26,25 +28,42 @@ void ADALMPluto::set_Freq(long int value){
     this->log ("Frequency set ...");
 }
 
-Array  ADALMPluto::get_available_iio_devices(){
-    // numberOfDevices will contain the number of available iio devices
-    int numberOfDevices;
+struct iio_scan_context * ADALMPluto::create_scan_context(){
     /*
     *   NULL context searches for all available backends,
     *   flag is set to 0 based on the documentation.
     */
-    this->scan_ctx = iio_create_scan_context(NULL,0);
-    if (!scan_ctx)
-		return Array();
+    return iio_create_scan_context(NULL, 0);
+}
 
 
-    // Running the scan
-    numberOfDevices = iio_scan_context_get_info_list(scan_ctx, &info); 
-    if (numberOfDevices < 0) { // If there is no available device
+/**
+ *  Scans for available iio devices and updates **info  variable
+ */
+int ADALMPluto::scan_for_available_devices(){
+
+    if (!this->scan_ctx){ //checking to seee if the scan context is already create. If not create it. 
+        this->log("Attempting to create scan context.");
+        this->scan_ctx = create_scan_context();
+    }
+    if (!this->scan_ctx){ //checking to see if the scan context is created. It must be created by now.
+        this->log("Couldn't create the scan context.");
+        return -1; //Error
+    }
+    this->numberOfDevicesFound = iio_scan_context_get_info_list (this->scan_ctx, &info);
+    return this->numberOfDevicesFound;
+
+}
+
+Array  ADALMPluto::get_available_iio_devices(){
+    // numberOfDevices will contain the number of available iio devices
+    this->scan_for_available_devices();
+
+    if (this->numberOfDevicesFound < 0){ //numberOfDevicesFound is returned by scan_for_available_devices function.
         return Array();
     }
 
-    for (int i=0; i< numberOfDevices; i++){
+    for (int i=0; i< this->numberOfDevicesFound; i++){
         String item;
         item = iio_context_info_get_description (info[i]) ; 
         item = item + " URI: " ;
@@ -56,10 +75,19 @@ Array  ADALMPluto::get_available_iio_devices(){
 
 }
 
-void ADALMPluto::setup(){
-    std::wstring ws = this->ip_address.c_str();
+String ADALMPluto::get_URI_byIndex(int Index){
+    if (Index <0 || Index >= this->numberOfDevicesFound){
+        return String("");
+    }
+    String URI = iio_context_info_get_uri(info[Index]);
+    return URI;
+}
+
+void ADALMPluto::setup(String URI){
+    std::wstring ws = URI.c_str();
     std::string s( ws.begin(), ws.end() );
     this->ctx = iio_create_context_from_uri(s.c_str());
+    this->selected_URI = URI;
     this->log("Context created...");
     this->phy = iio_context_find_device(ctx, "ad9361-phy");
     this->log("Phy created...");
@@ -110,14 +138,17 @@ Array ADALMPluto::receive(){
 }
 
 ADALMPluto::ADALMPluto(){
-    this->Freq          = 1090000000; //setting the default frequency to 1.09 GHz
-    this->ip_address    = "ip:192.168.2.1"; //setting the default ip address
-    this->buffer_size   = 4096;  //set the default buffer size to 4096
+    this->Freq                  = 1090000000; //setting the default frequency to 1.09 GHz
+    this->ip_address            = "ip:192.168.2.1"; //setting the default ip address
+    this->buffer_size           = 4096;  //set the default buffer size to 4096
+    this->numberOfDevicesFound  = 0; //initial value is 0.
 }
 
 ADALMPluto::~ADALMPluto(){
     iio_buffer_destroy(this->rxbuf);
     iio_context_destroy(this->ctx);
+    iio_context_info_list_free(this->info);
+
 }
 
 void ADALMPluto::log(std::string message){
